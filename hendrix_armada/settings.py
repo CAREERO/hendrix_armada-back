@@ -16,7 +16,7 @@ SECRET_KEY = 'django-insecure-*7!!kc@bmtx8ngui6lr@xmifmcwm6y%hnbe)rdei(b!ds8t)uq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '54.205.175.245', 'ec2-54-205-175-245.compute-1.amazonaws.com', 'hendrix-world-alb-966199406.us-east-1.elb.amazonaws.com']
+ALLOWED_HOSTS = ['localhost', '54.205.175.245']
 
 
 # Application definition
@@ -166,7 +166,7 @@ STRIPE_TEST_SECRET_KEY=os.environ.get('STRIPE_TEST_SECRET_KEY')
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = 'http://ec2-54-205-175-245.compute-1.amazonaws.com/static/'
-MEDIA_URL = '/images/' # to load media files on admin page as well (changes in url.py file also, project level)
+MEDIA_URL = 'http://ec2-54-205-175-245.compute-1.amazonaws.com/images/' # to load media files on admin page as well (changes in url.py file also, project level)
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'),] # new
 

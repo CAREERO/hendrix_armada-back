@@ -4,12 +4,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import permissions
 from .models import Product
-
+from cart.models import CartItem 
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'stock', 'image', 'quantity'] 
+        fields = ['id', 'name', 'description', 'price', 'stock', 'image', 'quantity']
 
 
 class ProductView(APIView):
@@ -23,6 +23,22 @@ class ProductDetailView(APIView):
     def get(self, request, pk):
         try:
             product = Product.objects.get(id=pk)
+            serializer = ProductSerializer(product)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({"detail": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def post(self, request, pk):
+        try:
+            product = Product.objects.get(id=pk)
+            quantity = request.data.get('quantity', 1)
+            cart_item, created = CartItem.objects.get_or_create(
+                product=product,
+                defaults={'quantity': quantity}
+            )
+            if not created:
+                cart_item.quantity += quantity
+                cart_item.save()
             serializer = ProductSerializer(product)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Product.DoesNotExist:

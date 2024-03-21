@@ -1,9 +1,10 @@
+  GNU nano 5.8                    requirements.txt
 Django==4.0.1
 django-adminlte3
-django-cors-headers==3.10.1
-djangorestframework==3.13.1
+django-cors-headers
+djangorestframework
 djangorestframework-simplejwt==5.1.0
-asgiref==3.5.0
+asgiref
 atomicwrites
 attrs==21.4.0
 certifi==2021.10.8
@@ -13,15 +14,8 @@ colorama==0.4.4
 idna==3.3
 iniconfig==1.1.1
 packaging==21.3
-Pillow==9.0.1
+Pillow
 pluggy==1.0.0
 py==1.11.0
-PyJWT==2.3.1
+PyJWT
 pyparsing==3.0.6
-pytest==7.1.2
-pytz==2021.3
-requests==2.26.0
-sqlparse==0.4.2
-stripe==3.79.0
-toml==0.10.2
-urllib3==1.26.7

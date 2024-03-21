@@ -16,7 +16,7 @@ SECRET_KEY = 'django-insecure-*7!!kc@bmtx8ngui6lr@xmifmcwm6y%hnbe)rdei(b!ds8t)uq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['ec2-35-170-158-252.compute-1.amazonaws.com', '35.170.158.252', 'localhost']
+ALLOWED_HOSTS = ['ec2-54-205-175-245.compute-1.amazonaws.com', '54.205.175.245', 'localhost']
 
 
 # Application definition
@@ -71,10 +71,21 @@ WSGI_APPLICATION = 'hendrix_armada.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',        # Replace 'your_database_name' with the name of your database
+        'USER': 'postgres',        # Replace 'your_database_user' with your PostgreSQL username
+        'PASSWORD': 'Kamikazee112!',# Replace 'your_database_password' with your PostgreSQL password
+        'HOST': 'postgres.czcqeiqiwwq8.us-east-1.rds.amazonaws.com',                 # Set the host to 'localhost' if the database is running on your local machine
+        'PORT': '5432',                          # Leave the port empty to use the default PostgreSQL port (5432)
     }
 }
 

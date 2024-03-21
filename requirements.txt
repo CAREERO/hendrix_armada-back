@@ -2,7 +2,7 @@ Django==4.0.1
 django-adminlte3
 django-cors-headers
 djangorestframework
-djangorestframework-simplejwt==5.1.0
+djangorestframework-simplejwt
 asgiref
 atomicwrites
 attrs==21.4.0
@@ -18,3 +18,10 @@ pluggy==1.0.0
 py==1.11.0
 PyJWT
 pyparsing==3.0.6
+pytest==7.1.2
+pytz==2021.3
+requests==2.26.0
+sqlparse==0.4.2
+stripe
+toml==0.10.2
+urllib3==1.26.7

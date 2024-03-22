@@ -164,8 +164,8 @@ STRIPE_TEST_SECRET_KEY=os.environ.get('STRIPE_TEST_SECRET_KEY')
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = 'http://54.146.118.222/static/'
-MEDIA_URL = 'http://54.146.118.222/images/' # to load media files on admin page as well (changes in url.py file also, project level)
+STATIC_URL = '/static/'
+MEDIA_URL = '/images/' # to load media files on admin page as well (changes in url.py file also, project level)
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static'),] # new
 

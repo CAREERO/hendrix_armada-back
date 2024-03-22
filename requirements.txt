@@ -1,5 +1,6 @@
 Django==4.0.1
 django-adminlte3
+gunicorn==20.1.0
 django-cors-headers
 djangorestframework
 djangorestframework-simplejwt

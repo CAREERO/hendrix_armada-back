@@ -14,5 +14,5 @@ urlpatterns = [
     path('add/<int:product_id>/', AddToCartAPIView.as_view(), name='add_to_cart'),
     path('items/<int:cart_item_id>/', CartItemAPIView.as_view(), name='cart_item_detail'),
     path('items/update/<int:cart_item_id>/', UpdateCartItemQuantityAPIView.as_view(), name='update_cart_item'),
-    path('items/remove/<int:cart_item_id>/', RemoveCartItemAPIView.as_view(), name='remove_cart_item'), 
+    path('item/remove/<int:cart_item_id>/', RemoveCartItemAPIView.as_view(), name='remove_cart_item'), 
 ]

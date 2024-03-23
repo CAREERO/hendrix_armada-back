@@ -55,13 +55,11 @@ class UpdateCartItemQuantityAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class RemoveCartItemAPIView(APIView):
-    def delete(self, request, cart_item_id):
+   def delete(self, request, cart_item_id):
         cart_item = get_object_or_404(CartItem, pk=cart_item_id)
-        cart = cart_item.cart
         cart_item.delete()
-        # Adjust subtotal after item removal
-        cart.update_subtotal()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Item removed from cart"}, status=status.HTTP_204_NO_CONTENT)
+
     
 class CartItemAPIView(APIView):
     def get_cart(self, request):
@@ -91,13 +89,11 @@ class CartItemAPIView(APIView):
             cart_item.save()
         serializer = CartItemSerializer(cart_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def delete(self, request, product_id):
-        cart = self.get_cart(request)
-        if not cart:
-            return Response({"message": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        product = get_object_or_404(Product, pk=product_id)
-        cart_item = get_object_or_404(CartItem, cart=cart, product=product)
-        cart_item.delete()
+    
+    def delete(self, request, cart_item_id):
+        def delete(self, request, cart_item_id):
+            cart_item = get_object_or_404(CartItem, pk=cart_item_id)
+            cart_item.delete()
         return Response({"message": "Item removed from cart"}, status=status.HTTP_204_NO_CONTENT)
+
+

@@ -23,17 +23,24 @@ class StripeModel(models.Model):
 
 
 class BillingAddress(models.Model):
-    name = models.CharField(max_length=200, null=False, blank=False)
-    user = models.ForeignKey(User, related_name="billingmodel", on_delete=models.CASCADE, null=True, blank=True)
-    phone_number = models.CharField(max_length=10, validators=[RegexValidator(r'^\+?1?\d{9,15}$')], null=False, blank=False)
-    pin_code = models.CharField(max_length=6, validators=[RegexValidator(r'^\d{0,9}$')], null=False, blank=False)
-    house_no = models.CharField(max_length=300, null=False, blank=False)
-    landmark = models.CharField(max_length=120, null=False, blank=False)
+    firstname = models.CharField(max_length=100, null=False, blank=False) 
+    lastname = models.CharField(max_length=100, null=False, blank=False)  
+    user = models.ForeignKey(User, related_name="billing_addresses", on_delete=models.CASCADE, null=True, blank=True)
+    phone_number = models.CharField(max_length=15, validators=[RegexValidator(r'^\+?1?\d{9,15}$')], null=False, blank=False)
+    zip_code = models.CharField(max_length=9, validators=[RegexValidator(r'^\d{0,9}$')], null=False, blank=False) 
+    house_no = models.CharField(max_length=300, null=False, blank=False) 
+    apartment = models.CharField(max_length=100, null=True, blank=True)
+    street_address = models.CharField(max_length=255, null=True, blank=True)
+    landmark = models.CharField(max_length=120, null=False, blank=False)  
     city = models.CharField(max_length=120, null=False, blank=False)
     state = models.CharField(max_length=120, null=False, blank=False)
+    country = models.CharField(max_length=120, null=False, blank=False)  
+    email = models.EmailField(max_length=254, null=True, blank=True)
+    company = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return f"{self.firstname} {self.lastname}"
+
 
 
 class OrderModel(models.Model):

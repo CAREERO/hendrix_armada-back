@@ -37,11 +37,23 @@ class CardsListSerializer(serializers.ModelSerializer):
 
 
 # billing address details
-class BillingAddressSerializer(serializers.ModelSerializer):
+from rest_framework import serializers
+from .models import BillingAddress
 
+class BillingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillingAddress
         fields = "__all__"
+
+    def validate(self, attrs):
+        if not attrs.get('firstname'):
+            raise serializers.ValidationError({'firstname': 'This field is required.'})
+        if not attrs.get('lastname'):
+            raise serializers.ValidationError({'lastname': 'This field is required.'})
+        if not attrs.get('phone_number'):
+            raise serializers.ValidationError({'phone_number': 'This field is required.'})
+        return attrs
+
 
 
 # all orders list

@@ -11,7 +11,7 @@ urlpatterns = [
     
  # Address URLs
     path('addresses/', views.UserAddressesListView.as_view(), name="user-addresses-list"),
-    path('addresses/<int:pk>/', views.UserAddressesListView.as_view(), name="user-address-details"),  # Changed to UserAddressesListView
+    path('addresses/<int:pk>/', views.UserAddressesListView.as_view(), name="user-address-details"),
     path('addresses/create/', views.CreateUserAddressView.as_view(), name="create-user-address"),
     path('addresses/update/<int:pk>/', views.UpdateUserAddressView.as_view(), name="update-user-address"),
     path('addresses/delete/<int:pk>/', views.DeleteUserAddressView.as_view(), name="delete-user-address"),

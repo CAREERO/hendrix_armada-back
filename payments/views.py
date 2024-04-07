@@ -6,7 +6,6 @@ from account.models import StripeModel, OrderModel
 from datetime import datetime
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
-from django.http import JsonResponse
 import math
 
 # Set the Stripe secret test key directly
@@ -185,55 +184,59 @@ class DeleteCardView(APIView):
 
 class CreateCheckoutSession(APIView):
     serializer_class = None
+    # No serializer needed
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        try:
-            product_name = request.data.get('product_name')
-            price = float(request.data.get('price'))
-            quantity = int(request.data.get('quantity'))
-            subtotal = float(request.data.get('subtotal'))
-            shipping_price = float(request.data.get('shippingPrice'))
-            total_price = float(request.data.get('total'))
-            user_id = 1
+        # user_id = self.request.data.get('user_id')
+        product_name = request.data.get('product_name')
+        price = float(request.data.get('price'))
+        quantity = int(request.data.get('quantity'))
+        subtotal = float(request.data.get('subtotal'))
+        shipping_price = float(request.data.get('shippingPrice'))
+        total_price = float(request.data.get('total'))
+        user_id = 1  # Assuming default user ID
 
             # Convert price and shipping price to cents
-            price = math.ceil(price * 100)
-            shipping_price = math.ceil(shipping_price * 100)
-
-            YOUR_DOMAIN = 'https://hendrixapi.world:8000/'
+        price = math.ceil(price * 100)
+        shipping_price = math.ceil(shipping_price * 100)
+        try:
+            YOUR_DOMAIN = 'http://localhost:8000/'
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
                     {
                         'price_data': {
+
                             'currency': 'usd',
                             'unit_amount': price,
                             'product_data': {
                                 'name': product_name,
                             },
                         },
-                        'quantity': quantity,
+                        'quantity': 1,
+
                     }
                 ],
-                billing_address_collection={
-                    'phone': 'required',
+                metadata={
+
+                    "user_id": 3,
                 },
-                shipping_address_collection={
-                    'allowed_countries': ['US'],  # Specify allowed countries for shipping
-                },
-                customer_email=request.user.email if request.user.is_authenticated else None,  # Save customer email for future use
                 mode='payment',
                 success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
                 cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
             )
-            main_url = checkout_session.url
-            return JsonResponse({"url": main_url})
-        except stripe.error.StripeError as e:
-            return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
-            return JsonResponse({"error": "An internal server error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return str(e)
 
+        main_url = checkout_session.url
+        data = {
+            'message': "success",
+            "url": main_url
+        }
+        # return JsonResponse(data)
+
+        return redirect(main_url)
 
 
 class CancelPage(TemplateView):

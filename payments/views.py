@@ -200,7 +200,7 @@ class CreateCheckoutSession(APIView):
         shipping_price = math.ceil(shipping_price * 100)
 
         try:
-            YOUR_DOMAIN = 'http://localhost:8000/'
+            YOUR_DOMAIN = 'https://localhost:8000/'
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
@@ -251,7 +251,7 @@ class CancelPage(TemplateView):
         user_id = int(self.kwargs['pk'])
         print("user_id:", user_id)
         print('cancel_page')
-        YOUR_DOMAIN1 = 'http://localhost:3000/cancel'
+        YOUR_DOMAIN1 = 'https://www.hendrix.world/cancel'
         return redirect(YOUR_DOMAIN1)
 
 
@@ -260,6 +260,6 @@ class SuccessPage(TemplateView):
         user_id = int(self.kwargs['pk'])
         print("user_id:",user_id)
         print("SuccessPage")
-        YOUR_DOMAIN1 = 'http://localhost:3000/success'
+        YOUR_DOMAIN1 = 'https://www.hendrix.world/success'
         return redirect(YOUR_DOMAIN1)
 

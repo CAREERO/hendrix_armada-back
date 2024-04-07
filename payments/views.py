@@ -200,7 +200,7 @@ class CreateCheckoutSession(APIView):
         shipping_price = math.ceil(shipping_price * 100)
 
         try:
-            YOUR_DOMAIN = 'https://localhost:8000/'
+            YOUR_DOMAIN = 'https://www.hendrixapi.world/'
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[

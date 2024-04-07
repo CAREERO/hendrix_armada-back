@@ -194,13 +194,13 @@ class CreateCheckoutSession(APIView):
             subtotal = float(request.data.get('subtotal'))
             shipping_price = float(request.data.get('shippingPrice'))
             total_price = float(request.data.get('total'))
-            user_id = 1  # Assuming default user ID
+            user_id = 1
 
             # Convert price and shipping price to cents
             price = math.ceil(price * 100)
             shipping_price = math.ceil(shipping_price * 100)
 
-            YOUR_DOMAIN = 'http://localhost:8000/'
+            YOUR_DOMAIN = 'https://hendrixapi.world:8000/'
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
@@ -215,9 +215,13 @@ class CreateCheckoutSession(APIView):
                         'quantity': quantity,
                     }
                 ],
-                metadata={
-                    "user_id": user_id,
+                billing_address_collection={
+                    'phone': 'required',
                 },
+                shipping_address_collection={
+                    'allowed_countries': ['US'],  # Specify allowed countries for shipping
+                },
+                customer_email=request.user.email if request.user.is_authenticated else None,  # Save customer email for future use
                 mode='payment',
                 success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
                 cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
@@ -226,6 +230,7 @@ class CreateCheckoutSession(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         main_url = checkout_session.url
+        print(main_url)
         return redirect(main_url)
 
 

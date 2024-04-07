@@ -6,6 +6,7 @@ from account.models import StripeModel, OrderModel
 from datetime import datetime
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
+from django.http import JsonResponse
 import math
 
 # Set the Stripe secret test key directly
@@ -226,12 +227,12 @@ class CreateCheckoutSession(APIView):
                 success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
                 cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
             )
+            main_url = checkout_session.url
+            return JsonResponse({"url": main_url})
+        except stripe.error.StripeError as e:
+            return JsonResponse({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        main_url = checkout_session.url
-        print(main_url)
-        return redirect(main_url)
+            return JsonResponse({"error": "An internal server error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

@@ -179,9 +179,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # cors origin
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOW_CREDENTIALS = True  # If your frontend uses cookies, set this to True
-CORS_ORIGIN_WHITELIST = [
-    'https://www.hendrix.world',  # Add your frontend domain here
-    'http://localhost:3000',       # Add any other origins you want to allow
-    ...
+
+CORS_ALLOWED_ORIGINS = [
+    "https://www.hendrix.world",
+    "https://hendrix.world",
+    "http://localhost:3000"
 ]

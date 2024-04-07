@@ -4,6 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from account.models import StripeModel, OrderModel
 from datetime import datetime
+from django.shortcuts import redirect
+from django.views.generic import TemplateView
+import math
 
 # Set the Stripe secret test key directly
 stripe.api_key = "sk_test_51P1kKeEg0n8FwKM8Ov6SPMRS10qELSGgbkCKkwTIizWCfJyfBJt1sryK3OckKPFGCCubZ1aAyfvU2p2ZIdoiJiKY00R4P0xcsK"
@@ -63,7 +66,6 @@ class CreateCardTokenView(APIView):
         except stripe.error.APIConnectionError:
             return Response({"detail": "Network error, Failed to establish a new connection."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 # Charge the customer's card
 class ChargeCustomerView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -178,3 +180,70 @@ class DeleteCardView(APIView):
             return Response("Card deleted successfully.", status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CreateCheckoutSession(APIView):
+    serializer_class = None
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            product_name = request.data.get('product_name')
+            price = float(request.data.get('price'))
+            quantity = int(request.data.get('quantity'))
+            subtotal = float(request.data.get('subtotal'))
+            shipping_price = float(request.data.get('shippingPrice'))
+            total_price = float(request.data.get('total'))
+            user_id = 1  # Assuming default user ID
+
+            # Convert price and shipping price to cents
+            price = math.ceil(price * 100)
+            shipping_price = math.ceil(shipping_price * 100)
+
+            YOUR_DOMAIN = 'http://localhost:8000/'
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[
+                    {
+                        'price_data': {
+                            'currency': 'usd',
+                            'unit_amount': price,
+                            'product_data': {
+                                'name': product_name,
+                            },
+                        },
+                        'quantity': quantity,
+                    }
+                ],
+                metadata={
+                    "user_id": user_id,
+                },
+                mode='payment',
+                success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
+                cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
+            )
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        main_url = checkout_session.url
+        return redirect(main_url)
+
+
+
+class CancelPage(TemplateView):
+    def get(self, request, *args, **kwargs):
+        user_id = int(self.kwargs['pk'])
+        print("user_id:", user_id)
+        print('cancel_page')
+        YOUR_DOMAIN1 = 'http://localhost:3000/cancel'
+        return redirect(YOUR_DOMAIN1)
+
+
+class SuccessPage(TemplateView):
+    def get(self, request, *args, **kwargs):
+        user_id = int(self.kwargs['pk'])
+        print("user_id:",user_id)
+        print("SuccessPage")
+        YOUR_DOMAIN1 = 'http://localhost:3000/success'
+        return redirect(YOUR_DOMAIN1)
+

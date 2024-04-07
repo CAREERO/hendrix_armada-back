@@ -184,7 +184,7 @@ class DeleteCardView(APIView):
 
 
 class CreateCheckoutSession(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         product_name = request.data.get('product_name')

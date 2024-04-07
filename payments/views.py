@@ -1,6 +1,7 @@
 import stripe
 from rest_framework import status, permissions
 from rest_framework.views import APIView
+from django.http import JsonResponse
 from rest_framework.response import Response
 from account.models import StripeModel, OrderModel
 from datetime import datetime
@@ -183,12 +184,9 @@ class DeleteCardView(APIView):
 
 
 class CreateCheckoutSession(APIView):
-    serializer_class = None
-    # No serializer needed
-    permission_classes = [permissions.AllowAny]
+    permission_classes = []
 
     def post(self, request, *args, **kwargs):
-        # user_id = self.request.data.get('user_id')
         product_name = request.data.get('product_name')
         price = float(request.data.get('price'))
         quantity = int(request.data.get('quantity'))
@@ -197,9 +195,10 @@ class CreateCheckoutSession(APIView):
         total_price = float(request.data.get('total'))
         user_id = 1  # Assuming default user ID
 
-            # Convert price and shipping price to cents
+        # Convert price and shipping price to cents
         price = math.ceil(price * 100)
         shipping_price = math.ceil(shipping_price * 100)
+
         try:
             YOUR_DOMAIN = 'http://localhost:8000/'
             checkout_session = stripe.checkout.Session.create(
@@ -207,37 +206,45 @@ class CreateCheckoutSession(APIView):
                 line_items=[
                     {
                         'price_data': {
-
                             'currency': 'usd',
                             'unit_amount': price,
                             'product_data': {
                                 'name': product_name,
                             },
                         },
+                        'quantity': quantity,
+                    },
+                    # Adding shipping line item
+                    {
+                        'price_data': {
+                            'currency': 'usd',
+                            'unit_amount': shipping_price,
+                            'product_data': {
+                                'name': 'Shipping',
+                            },
+                        },
                         'quantity': 1,
-
-                    }
+                    },
                 ],
                 metadata={
-
-                    "user_id": 3,
+                    "user_id": user_id,
+                    "subtotal": subtotal,
+                    "shipping_price": shipping_price,
                 },
                 mode='payment',
                 success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
                 cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
             )
         except Exception as e:
-            return str(e)
+            return JsonResponse({'error': str(e)}, status=500)
 
         main_url = checkout_session.url
         data = {
             'message': "success",
             "url": main_url
         }
-        # return JsonResponse(data)
 
         return redirect(main_url)
-
 
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):

@@ -2,7 +2,6 @@ import stripe
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponseRedirect
-from rest_framework.response import Response
 from account.models import StripeModel, OrderModel
 from django.shortcuts import redirect
 
@@ -36,7 +35,7 @@ class CreateCardTokenView(APIView):
 
         # Check if the required fields are present in the request data
         if 'card_token' not in data:
-            return Response({"detail": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"detail": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             customer_data = stripe.Customer.list(email=email).data
@@ -60,13 +59,13 @@ class CreateCardTokenView(APIView):
                 try:
                     save_card_in_db(create_user_card, email, create_user_card.id, customer["id"], request.user)
                 except Exception as e:
-                    return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                    return JsonResponse({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             message = {"customer_id": customer["id"], "email": email, "card_data": create_user_card}
-            return Response(message, status=status.HTTP_200_OK)
+            return JsonResponse(message, status=status.HTTP_200_OK)
 
         except stripe.error.APIConnectionError:
-            return Response({"detail": "Network error, Failed to establish a new connection."},
+            return JsonResponse({"detail": "Network error, Failed to establish a new connection."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Charge the customer's card
@@ -100,7 +99,7 @@ class ChargeCustomerView(APIView):
                 user=request.user
             )
 
-            return Response(
+            return JsonResponse(
                 data={
                     "data": {
                         "customer_id": customer.id,
@@ -109,7 +108,7 @@ class ChargeCustomerView(APIView):
                 }, status=status.HTTP_200_OK)
 
         except stripe.error.APIConnectionError:
-            return Response({"detail": "Network error, Failed to establish a new connection."},
+            return JsonResponse({"detail": "Network error, Failed to establish a new connection."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Retrieve card details
@@ -121,9 +120,9 @@ class RetrieveCardView(APIView):
             customer_id = request.headers.get("Customer-Id")
             card_id = request.headers.get("Card-Id")
             card_details = stripe.Customer.retrieve_source(customer_id, card_id)
-            return Response(card_details, status=status.HTTP_200_OK)
+            return JsonResponse(card_details, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Update a card
 class CardUpdateView(APIView):
@@ -158,13 +157,13 @@ class CardUpdateView(APIView):
                 obj.address_zip = data.get("address_zip", obj.address_zip)
                 obj.save()
 
-            return Response(
+            return JsonResponse(
                 {
                     "detail": "Card updated successfully",
                     "data": {"Updated Card": update_card},
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Delete a card
 class DeleteCardView(APIView):
@@ -180,14 +179,10 @@ class DeleteCardView(APIView):
             stripe.Customer.delete_source(customer_id, card_id)
             obj_card.delete()
             stripe.Customer.delete(customer_id)
-            return Response("Card deleted successfully.", status=status.HTTP_200_OK)
+            return JsonResponse("Card deleted successfully.", status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-from django.http import JsonResponse
-import stripe
-import math
 
 class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]

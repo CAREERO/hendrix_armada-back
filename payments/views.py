@@ -233,8 +233,8 @@ class CreateCheckoutSession(APIView):
                     "shipping_price": shipping_price,
                 },
                 mode='payment',
-                success_url=YOUR_DOMAIN + '/payments/success/' + str(user_id),
-                cancel_url=YOUR_DOMAIN + '/payments/cancel/' + str(user_id),
+                success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
+                cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
             )
             
             main_url = checkout_session.url
@@ -254,14 +254,8 @@ class CancelPage(TemplateView):
 
 class SuccessPage(TemplateView):
     def get(self, request):
-        session_id = request.GET.get('session_id')
-        stripe.api_key = 'sk_test_51P1kKeEg0n8FwKM8Ov6SPMRS10qELSGgbkCKkwTIizWCfJyfBJt1sryK3OckKPFGCCubZ1aAyfvU2p2ZIdoiJiKY00R4P0xcsK'
-        
-        try:
-            session = stripe.checkout.Session.retrieve(session_id)
-            status = session['status']
-            customer_email = session['customer_details']['email']
-            
-            return JsonResponse({'status': status, 'customer_email': customer_email})
-        except stripe.error.InvalidRequestError as e:
-            return JsonResponse({'error': str(e)}, status=400)
+        user_id = int(self.kwargs['pk'])
+        print("user_id:", user_id)
+        print('success_page')
+        YOUR_DOMAIN1 = 'https://hendrix.world/success'
+        return JsonResponse(YOUR_DOMAIN1)

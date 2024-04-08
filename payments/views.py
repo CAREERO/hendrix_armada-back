@@ -14,6 +14,36 @@ import math
 stripe.api_key = "sk_test_51P1kKeEg0n8FwKM8Ov6SPMRS10qELSGgbkCKkwTIizWCfJyfBJt1sryK3OckKPFGCCubZ1aAyfvU2p2ZIdoiJiKY00R4P0xcsK"
 stripe_webhook_secret = "whsec_896SK1SiIJUhnBRc3Jlh2fGoeoTee9Tw"
 
+csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.headers.get('Stripe-Signature')
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, stripe_webhook_secret
+        )
+    except ValueError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    except stripe.error.SignatureVerificationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+    if event['type'] == 'invoice.payment_succeeded':
+        # Handle successful payment invoice event
+        invoice = event['data']['object']
+        customer_id = invoice['customer']
+        # Perform actions related to successful payment (e.g., update order status)
+        return JsonResponse({'message': 'Invoice payment succeeded'}, status=200)
+    elif event['type'] == 'invoice.payment_failed':
+        # Handle failed payment invoice event
+        invoice = event['data']['object']
+        customer_id = invoice['customer']
+        # Perform actions related to failed payment (e.g., send notification to customer)
+        return JsonResponse({'message': 'Invoice payment failed'}, status=200)
+    else:
+        # Handle other invoice events if needed
+        return JsonResponse({'message': 'Event received'}, status=200)
+
 # Function to save card details in the database
 def save_card_in_db(card_data, email, card_id, customer_id, user):
     StripeModel.objects.create(
@@ -142,34 +172,6 @@ class DeleteCardView(APIView):
             return Response("Card deleted successfully.", status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-@csrf_exempt
-def stripe_webhook(request):
-    payload = request.body
-    sig_header = request.headers.get('Stripe-Signature')
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, stripe_webhook_secret
-        )
-    except ValueError as e:
-        return JsonResponse({'error': str(e)}, status=400)
-    except stripe.error.SignatureVerificationError as e:
-        return JsonResponse({'error': str(e)}, status=400)
-
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        customer_id = session['customer']
-        invoices = stripe.Invoice.list(customer=customer_id, limit=1)['data']
-        return JsonResponse({'invoices': invoices})
-    elif event['type'] == 'checkout.session.failed':
-        # Handle failed payment
-        pass
-    else:
-        # Handle other events
-        pass
-
-    return JsonResponse({'message': 'Event received'}, status=200)
 
 class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]

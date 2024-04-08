@@ -189,20 +189,22 @@ class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        product_name = request.data.get('product_name')
-        price = float(request.data.get('price'))
-        quantity = int(request.data.get('quantity'))
-        subtotal = float(request.data.get('subtotal'))
-        shipping_price = float(request.data.get('shippingPrice'))
-        total_price = float(request.data.get('total'))
-        user_id = 1  # Assuming default user ID
-
-        # Convert price and shipping price to cents
-        price = math.ceil(price * 100)
-        shipping_price = math.ceil(shipping_price * 100)
-
         try:
-            YOUR_DOMAIN = 'https://www.hendrixapi.world/'
+            product_name = request.data.get('product_name')
+            price = float(request.data.get('price'))
+            quantity = int(request.data.get('quantity'))
+            subtotal = float(request.data.get('subtotal'))
+            shipping_price = float(request.data.get('shippingPrice'))
+            product_image = request.data.get('product_image')
+            total_price = float(request.data.get('total'))
+            user_id = 1  # Change this to fetch authenticated user ID
+
+            # Convert price and shipping price to cents
+            price = math.ceil(price * 100)
+            shipping_price = math.ceil(shipping_price * 100)
+
+            YOUR_DOMAIN = 'https://www.hendrixapi.world/'  # Change this to your domain
+
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
@@ -212,6 +214,7 @@ class CreateCheckoutSession(APIView):
                             'unit_amount': price,
                             'product_data': {
                                 'name': product_name,
+                                'images': [product_image], 
                             },
                         },
                         'quantity': quantity,

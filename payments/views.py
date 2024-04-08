@@ -1,11 +1,10 @@
 import stripe
 from rest_framework import status, permissions
 from rest_framework.views import APIView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from rest_framework.response import Response
 from account.models import StripeModel, OrderModel
 from datetime import datetime
-from django.shortcuts import redirect
 from django.views.generic import TemplateView
 import math
 
@@ -67,6 +66,7 @@ class CreateCardTokenView(APIView):
         except stripe.error.APIConnectionError:
             return Response({"detail": "Network error, Failed to establish a new connection."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 # Charge the customer's card
 class ChargeCustomerView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -238,13 +238,8 @@ class CreateCheckoutSession(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-        main_url = checkout_session.url
-        data = {
-            'message': "success",
-            "url": main_url
-        }
-
-        return redirect(main_url)
+        # Returning the session ID
+        return Response({'id': checkout_session.id})
 
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):
@@ -252,7 +247,7 @@ class CancelPage(TemplateView):
         print("user_id:", user_id)
         print('cancel_page')
         YOUR_DOMAIN1 = 'https://www.hendrix.world/cancel'
-        return redirect(YOUR_DOMAIN1)
+        return HttpResponseRedirect(YOUR_DOMAIN1)
 
 
 class SuccessPage(TemplateView):
@@ -261,5 +256,4 @@ class SuccessPage(TemplateView):
         print("user_id:",user_id)
         print("SuccessPage")
         YOUR_DOMAIN1 = 'https://www.hendrix.world/success'
-        return redirect(YOUR_DOMAIN1)
-
+        return HttpResponseRedirect(YOUR_DOMAIN1)

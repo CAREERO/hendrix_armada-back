@@ -200,7 +200,7 @@ class CreateCheckoutSession(APIView):
             price = math.ceil(price * 100)
             shipping_price = math.ceil(shipping_price * 100)
 
-            YOUR_DOMAIN = 'https://hendrix.world'  # Change this to your domain
+            YOUR_DOMAIN = 'https://hendrix.world'
 
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
@@ -233,8 +233,8 @@ class CreateCheckoutSession(APIView):
                     "shipping_price": shipping_price,
                 },
                 mode='payment',
-                success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
-                cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
+                success_url=YOUR_DOMAIN + '/success',
+                cancel_url=YOUR_DOMAIN + '/cancel/',
             )
             
             main_url = checkout_session.url
@@ -243,19 +243,13 @@ class CreateCheckoutSession(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
+
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):
-        user_id = int(self.kwargs['pk'])
-        print("user_id:", user_id)
         print('cancel_page')
-        YOUR_DOMAIN1 = 'https://www.hendrix.world/cancel'
-        return JsonResponse(YOUR_DOMAIN1)
-
+        return JsonResponse({'message': 'Payment Cancelled'})
 
 class SuccessPage(TemplateView):
     def get(self, request):
-        user_id = int(self.kwargs['pk'])
-        print("user_id:", user_id)
         print('success_page')
-        YOUR_DOMAIN1 = 'https://hendrix.world/success'
-        return JsonResponse(YOUR_DOMAIN1)
+        return JsonResponse({'message': 'Payment Successful'})

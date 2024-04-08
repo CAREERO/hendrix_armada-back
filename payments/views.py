@@ -187,20 +187,21 @@ class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        product_name = request.data.get('product_name')
-        price = float(request.data.get('price'))
-        quantity = int(request.data.get('quantity'))
-        subtotal = float(request.data.get('subtotal'))
-        shipping_price = float(request.data.get('shippingPrice'))
-        total_price = float(request.data.get('total'))
-        user_id = 1  # Assuming default user ID
-
-        # Convert price and shipping price to cents
-        price = math.ceil(price * 100)
-        shipping_price = math.ceil(shipping_price * 100)
-
         try:
-            YOUR_DOMAIN = 'https://hendrixapi.world/'
+            product_name = request.data.get('product_name')
+            price = float(request.data.get('price'))
+            quantity = int(request.data.get('quantity'))
+            subtotal = float(request.data.get('subtotal'))
+            shipping_price = float(request.data.get('shippingPrice'))
+            total_price = float(request.data.get('total'))
+            user_id = 1  # Change this to fetch authenticated user ID
+
+            # Convert price and shipping price to cents
+            price = math.ceil(price * 100)
+            shipping_price = math.ceil(shipping_price * 100)
+
+            YOUR_DOMAIN = 'https://hendrixapi.world'  # Change this to your domain
+
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
@@ -232,19 +233,15 @@ class CreateCheckoutSession(APIView):
                     "shipping_price": shipping_price,
                 },
                 mode='payment',
-                success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
-                cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
+                success_url=YOUR_DOMAIN + '/payments/success/' + str(user_id),
+                cancel_url=YOUR_DOMAIN + '/payments/cancel/' + str(user_id),
             )
+            
+            main_url = checkout_session.url
+            return JsonResponse({'message': 'success', 'url': main_url})
+            
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-        main_url = checkout_session.url
-        data = {
-            'message': "success",
-            "url": main_url
-        }
-
-        return JsonResponse(main_url)
 
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):

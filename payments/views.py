@@ -1,12 +1,11 @@
 import stripe
 from rest_framework import status, permissions
 from rest_framework.views import APIView
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse
 from rest_framework.response import Response
 from account.models import StripeModel, OrderModel
-from django.shortcuts import redirect
-from django.urls import reverse
 from datetime import datetime
+from django.shortcuts import redirect
 from django.views.generic import TemplateView
 import math
 
@@ -68,7 +67,6 @@ class CreateCardTokenView(APIView):
         except stripe.error.APIConnectionError:
             return Response({"detail": "Network error, Failed to establish a new connection."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 # Charge the customer's card
 class ChargeCustomerView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -185,27 +183,24 @@ class DeleteCardView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-from django.http import JsonResponse
-import stripe
-import math
-
 class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        product_name = request.data.get('product_name')
+        price = float(request.data.get('price'))
+        quantity = int(request.data.get('quantity'))
+        subtotal = float(request.data.get('subtotal'))
+        shipping_price = float(request.data.get('shippingPrice'))
+        total_price = float(request.data.get('total'))
+        user_id = 1  # Assuming default user ID
+
+        # Convert price and shipping price to cents
+        price = math.ceil(price * 100)
+        shipping_price = math.ceil(shipping_price * 100)
+
         try:
-            product_name = request.data.get('product_name')
-            price = float(request.data.get('price'))
-            quantity = int(request.data.get('quantity'))
-            subtotal = float(request.data.get('subtotal'))
-            shipping_price = float(request.data.get('shippingPrice'))
-            total_price = float(request.data.get('total'))
-            user_id = 1  # Change this to fetch authenticated user ID
-
-            # Convert price and shipping price to cents
-            price = math.ceil(price * 100)
-            shipping_price = math.ceil(shipping_price * 100)
-
+            YOUR_DOMAIN = 'https://localhost:8000/'
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
@@ -237,12 +232,39 @@ class CreateCheckoutSession(APIView):
                     "shipping_price": shipping_price,
                 },
                 mode='payment',
-                success_url=request.build_absolute_uri(reverse('success-page-url')),
-                cancel_url=request.build_absolute_uri(reverse('cancel-page-url')),
+                success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
+                cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
             )
-            
-            main_url = checkout_session.url
-            return JsonResponse({'message': 'success', 'url': main_url})
-            
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+        main_url = checkout_session.url
+        data = {
+            'message': "success",
+            "url": main_url
+        }
+
+        return redirect(main_url)
+
+class CancelPage(TemplateView):
+    def get(self, request, *args, **kwargs):
+        user_id = int(self.kwargs['pk'])
+        print("user_id:", user_id)
+        print('cancel_page')
+        YOUR_DOMAIN1 = 'https://www.hendrix.world/cancel'
+        return redirect(YOUR_DOMAIN1)
+
+
+class SuccessPage(TemplateView):
+    def get(self, request):
+        session_id = request.GET.get('session_id')
+        stripe.api_key = 'sk_test_51P1kKeEg0n8FwKM8Ov6SPMRS10qELSGgbkCKkwTIizWCfJyfBJt1sryK3OckKPFGCCubZ1aAyfvU2p2ZIdoiJiKY00R4P0xcsK'
+        
+        try:
+            session = stripe.checkout.Session.retrieve(session_id)
+            status = session['status']
+            customer_email = session['customer_details']['email']
+            
+            return JsonResponse({'status': status, 'customer_email': customer_email})
+        except stripe.error.InvalidRequestError as e:
+            return JsonResponse({'error': str(e)}, status=400)

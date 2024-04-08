@@ -4,6 +4,8 @@ from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponseRedirect
 from rest_framework.response import Response
 from account.models import StripeModel, OrderModel
+from django.shortcuts import redirect
+
 from datetime import datetime
 from django.views.generic import TemplateView
 import math
@@ -237,10 +239,16 @@ class CreateCheckoutSession(APIView):
             )
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
-        # Returning the session ID
-        return Response({'id': checkout_session.id})
+        main_url = checkout_session.url
+        data = {
+            'message': "success",
+            "url": main_url
+        }
 
+        return redirect(main_url)
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):
         user_id = int(self.kwargs['pk'])

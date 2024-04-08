@@ -185,6 +185,10 @@ class DeleteCardView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+from django.http import JsonResponse
+import stripe
+import math
+
 class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -200,8 +204,8 @@ class CreateCheckoutSession(APIView):
             user_id = 1  # Change this to fetch authenticated user ID
 
             # Convert price and shipping price to cents
-            price = math.ceil(price * 100)
-            shipping_price = math.ceil(shipping_price * 100)
+            price_cents = math.ceil(price * 100)
+            shipping_price_cents = math.ceil(shipping_price * 100)
 
             YOUR_DOMAIN = 'https://www.hendrixapi.world/'  # Change this to your domain
 
@@ -211,7 +215,7 @@ class CreateCheckoutSession(APIView):
                     {
                         'price_data': {
                             'currency': 'usd',
-                            'unit_amount': price,
+                            'unit_amount': price_cents,
                             'product_data': {
                                 'name': product_name,
                                 'images': [product_image], 
@@ -223,7 +227,7 @@ class CreateCheckoutSession(APIView):
                     {
                         'price_data': {
                             'currency': 'usd',
-                            'unit_amount': shipping_price,
+                            'unit_amount': shipping_price_cents,
                             'product_data': {
                                 'name': 'Shipping',
                             },
@@ -244,8 +248,13 @@ class CreateCheckoutSession(APIView):
             main_url = checkout_session.url
             return JsonResponse({'message': 'success', 'url': main_url})
             
-        except Exception as e:
+        except stripe.error.StripeError as e:
+            # Handle Stripe errors
             return JsonResponse({'error': str(e)}, status=500)
+        except Exception as e:
+            # Handle other exceptions
+            return JsonResponse({'error': str(e)}, status=500)
+
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):
         user_id = int(self.kwargs['pk'])

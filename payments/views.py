@@ -7,10 +7,12 @@ from account.models import StripeModel, OrderModel
 from datetime import datetime
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
+from django.views.decorators.csrf import csrf_exempt
 import math
 
 # Set the Stripe secret test key directly
 stripe.api_key = "sk_test_51P1kKeEg0n8FwKM8Ov6SPMRS10qELSGgbkCKkwTIizWCfJyfBJt1sryK3OckKPFGCCubZ1aAyfvU2p2ZIdoiJiKY00R4P0xcsK"
+stripe_webhook_secret = "whsec_896SK1SiIJUhnBRc3Jlh2fGoeoTee9Tw"
 
 # Function to save card details in the database
 def save_card_in_db(card_data, email, card_id, customer_id, user):
@@ -67,48 +69,7 @@ class CreateCardTokenView(APIView):
         except stripe.error.APIConnectionError:
             return Response({"detail": "Network error, Failed to establish a new connection."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-# Charge the customer's card
-class ChargeCustomerView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
-        try:
-            data = request.data
-            email = data.get("email")
-            customer_data = stripe.Customer.list(email=email).data
-            customer = customer_data[0]
-
-            stripe.Charge.create(
-                customer=customer.id,
-                amount=int(float(data["amount"]) * 100),
-                currency="inr",
-                description='Software development services',
-            )
-
-            new_order = OrderModel.objects.create(
-                name=data["name"],
-                card_number=data["card_number"],
-                address=data["address"],
-                ordered_item=data["ordered_item"],
-                paid_status=data["paid_status"],
-                paid_at=datetime.now(),
-                total_price=data["total_price"],
-                is_delivered=data["is_delivered"],
-                delivered_at=data["delivered_at"],
-                user=request.user
-            )
-
-            return Response(
-                data={
-                    "data": {
-                        "customer_id": customer.id,
-                        "message": "Payment Successful",
-                    }
-                }, status=status.HTTP_200_OK)
-
-        except stripe.error.APIConnectionError:
-            return Response({"detail": "Network error, Failed to establish a new connection."},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Retrieve card details
 class RetrieveCardView(APIView):
@@ -253,3 +214,32 @@ class SuccessPage(TemplateView):
     def get(self, request):
         print('success_page')
         return JsonResponse({'message': 'Payment Successful'})
+    
+    
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.headers.get('Stripe-Signature')
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, stripe_webhook_secret
+        )
+    except ValueError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    except stripe.error.SignatureVerificationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        customer_id = session['customer']
+        invoices = stripe.Invoice.list(customer=customer_id, limit=1)['data']
+        return JsonResponse({'invoices': invoices})
+    elif event['type'] == 'checkout.session.failed':
+        # Handle failed payment
+        pass
+    else:
+        # Handle other events
+        pass
+
+    return JsonResponse({'message': 'Event received'}, status=200)

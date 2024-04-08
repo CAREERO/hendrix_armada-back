@@ -244,7 +244,7 @@ class CreateCheckoutSession(APIView):
             "url": main_url
         }
 
-        return redirect(main_url)
+        return JsonResponse(main_url)
 
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):
@@ -252,7 +252,7 @@ class CancelPage(TemplateView):
         print("user_id:", user_id)
         print('cancel_page')
         YOUR_DOMAIN1 = 'https://www.hendrix.world/cancel'
-        return redirect(YOUR_DOMAIN1)
+        return JsonResponse(YOUR_DOMAIN1)
 
 
 class SuccessPage(TemplateView):

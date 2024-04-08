@@ -142,7 +142,34 @@ class DeleteCardView(APIView):
             return Response("Card deleted successfully.", status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.headers.get('Stripe-Signature')
 
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, stripe_webhook_secret
+        )
+    except ValueError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    except stripe.error.SignatureVerificationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        customer_id = session['customer']
+        invoices = stripe.Invoice.list(customer=customer_id, limit=1)['data']
+        return JsonResponse({'invoices': invoices})
+    elif event['type'] == 'checkout.session.failed':
+        # Handle failed payment
+        pass
+    else:
+        # Handle other events
+        pass
+
+    return JsonResponse({'message': 'Event received'}, status=200)
 
 class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -216,30 +243,3 @@ class SuccessPage(TemplateView):
         return JsonResponse({'message': 'Payment Successful'})
     
     
-@csrf_exempt
-def stripe_webhook(request):
-    payload = request.body
-    sig_header = request.headers.get('Stripe-Signature')
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, stripe_webhook_secret
-        )
-    except ValueError as e:
-        return JsonResponse({'error': str(e)}, status=400)
-    except stripe.error.SignatureVerificationError as e:
-        return JsonResponse({'error': str(e)}, status=400)
-
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        customer_id = session['customer']
-        invoices = stripe.Invoice.list(customer=customer_id, limit=1)['data']
-        return JsonResponse({'invoices': invoices})
-    elif event['type'] == 'checkout.session.failed':
-        # Handle failed payment
-        pass
-    else:
-        # Handle other events
-        pass
-
-    return JsonResponse({'message': 'Event received'}, status=200)

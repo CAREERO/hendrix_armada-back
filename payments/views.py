@@ -185,24 +185,29 @@ class DeleteCardView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+from django.http import JsonResponse
+import stripe
+import math
+
 class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        product_name = request.data.get('product_name')
-        price = float(request.data.get('price'))
-        quantity = int(request.data.get('quantity'))
-        subtotal = float(request.data.get('subtotal'))
-        shipping_price = float(request.data.get('shippingPrice'))
-        total_price = float(request.data.get('total'))
-        user_id = 1  # Assuming default user ID
-
-        # Convert price and shipping price to cents
-        price = math.ceil(price * 100)
-        shipping_price = math.ceil(shipping_price * 100)
-
         try:
-            YOUR_DOMAIN = 'https://www.hendrixapi.world/'
+            product_name = request.data.get('product_name')
+            price = float(request.data.get('price'))
+            quantity = int(request.data.get('quantity'))
+            subtotal = float(request.data.get('subtotal'))
+            shipping_price = float(request.data.get('shippingPrice'))
+            total_price = float(request.data.get('total'))
+            user_id = 1  # Change this to fetch authenticated user ID
+
+            # Convert price and shipping price to cents
+            price = math.ceil(price * 100)
+            shipping_price = math.ceil(shipping_price * 100)
+
+            YOUR_DOMAIN = 'https://www.example.com'  # Change this to your domain
+
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
@@ -243,6 +248,7 @@ class CreateCheckoutSession(APIView):
             
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):
         user_id = int(self.kwargs['pk'])

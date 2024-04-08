@@ -2,6 +2,7 @@ import stripe
 from rest_framework import status, permissions
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponseRedirect
+from rest_framework.response import Response
 from account.models import StripeModel, OrderModel
 from django.shortcuts import redirect
 
@@ -35,7 +36,7 @@ class CreateCardTokenView(APIView):
 
         # Check if the required fields are present in the request data
         if 'card_token' not in data:
-            return JsonResponse({"detail": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             customer_data = stripe.Customer.list(email=email).data
@@ -59,13 +60,13 @@ class CreateCardTokenView(APIView):
                 try:
                     save_card_in_db(create_user_card, email, create_user_card.id, customer["id"], request.user)
                 except Exception as e:
-                    return JsonResponse({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             message = {"customer_id": customer["id"], "email": email, "card_data": create_user_card}
-            return JsonResponse(message, status=status.HTTP_200_OK)
+            return Response(message, status=status.HTTP_200_OK)
 
         except stripe.error.APIConnectionError:
-            return JsonResponse({"detail": "Network error, Failed to establish a new connection."},
+            return Response({"detail": "Network error, Failed to establish a new connection."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Charge the customer's card
@@ -99,7 +100,7 @@ class ChargeCustomerView(APIView):
                 user=request.user
             )
 
-            return JsonResponse(
+            return Response(
                 data={
                     "data": {
                         "customer_id": customer.id,
@@ -108,7 +109,7 @@ class ChargeCustomerView(APIView):
                 }, status=status.HTTP_200_OK)
 
         except stripe.error.APIConnectionError:
-            return JsonResponse({"detail": "Network error, Failed to establish a new connection."},
+            return Response({"detail": "Network error, Failed to establish a new connection."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Retrieve card details
@@ -120,9 +121,9 @@ class RetrieveCardView(APIView):
             customer_id = request.headers.get("Customer-Id")
             card_id = request.headers.get("Card-Id")
             card_details = stripe.Customer.retrieve_source(customer_id, card_id)
-            return JsonResponse(card_details, status=status.HTTP_200_OK)
+            return Response(card_details, status=status.HTTP_200_OK)
         except Exception as e:
-            return JsonResponse({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Update a card
 class CardUpdateView(APIView):
@@ -157,13 +158,13 @@ class CardUpdateView(APIView):
                 obj.address_zip = data.get("address_zip", obj.address_zip)
                 obj.save()
 
-            return JsonResponse(
+            return Response(
                 {
                     "detail": "Card updated successfully",
                     "data": {"Updated Card": update_card},
                 }, status=status.HTTP_200_OK)
         except Exception as e:
-            return JsonResponse({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Delete a card
 class DeleteCardView(APIView):
@@ -179,41 +180,38 @@ class DeleteCardView(APIView):
             stripe.Customer.delete_source(customer_id, card_id)
             obj_card.delete()
             stripe.Customer.delete(customer_id)
-            return JsonResponse("Card deleted successfully.", status=status.HTTP_200_OK)
+            return Response("Card deleted successfully.", status=status.HTTP_200_OK)
         except Exception as e:
-            return JsonResponse({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CreateCheckoutSession(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        product_name = request.data.get('product_name')
+        price = float(request.data.get('price'))
+        quantity = int(request.data.get('quantity'))
+        subtotal = float(request.data.get('subtotal'))
+        shipping_price = float(request.data.get('shippingPrice'))
+        total_price = float(request.data.get('total'))
+        user_id = 1  # Assuming default user ID
+
+        # Convert price and shipping price to cents
+        price = math.ceil(price * 100)
+        shipping_price = math.ceil(shipping_price * 100)
+
         try:
-            product_name = request.data.get('product_name')
-            price = float(request.data.get('price'))
-            quantity = int(request.data.get('quantity'))
-            subtotal = float(request.data.get('subtotal'))
-            shipping_price = float(request.data.get('shippingPrice'))
-            product_image = request.data.get('product_image')
-            total_price = float(request.data.get('total'))
-            user_id = 1  # Change this to fetch authenticated user ID
-
-            # Convert price and shipping price to cents
-            price_cents = math.ceil(price * 100)
-            shipping_price_cents = math.ceil(shipping_price * 100)
-
-            YOUR_DOMAIN = 'https://www.hendrixapi.world/'  # Change this to your domain
-
+            YOUR_DOMAIN = 'https://www.hendrixapi.world/'
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
                     {
                         'price_data': {
                             'currency': 'usd',
-                            'unit_amount': price_cents,
+                            'unit_amount': price,
                             'product_data': {
                                 'name': product_name,
-                                'images': [product_image], 
                             },
                         },
                         'quantity': quantity,
@@ -222,7 +220,7 @@ class CreateCheckoutSession(APIView):
                     {
                         'price_data': {
                             'currency': 'usd',
-                            'unit_amount': shipping_price_cents,
+                            'unit_amount': shipping_price,
                             'product_data': {
                                 'name': 'Shipping',
                             },
@@ -243,13 +241,8 @@ class CreateCheckoutSession(APIView):
             main_url = checkout_session.url
             return JsonResponse({'message': 'success', 'url': main_url})
             
-        except stripe.error.StripeError as e:
-            # Handle Stripe errors
-            return JsonResponse({'error': str(e)}, status=500)
         except Exception as e:
-            # Handle other exceptions
             return JsonResponse({'error': str(e)}, status=500)
-
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):
         user_id = int(self.kwargs['pk'])

@@ -237,18 +237,12 @@ class CreateCheckoutSession(APIView):
                 success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
                 cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
             )
+            
+            main_url = checkout_session.url
+            return JsonResponse({'message': 'success', 'url': main_url})
+            
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-        main_url = checkout_session.url
-        data = {
-            'message': "success",
-            "url": main_url
-        }
-
-        return redirect(main_url)
 class CancelPage(TemplateView):
     def get(self, request, *args, **kwargs):
         user_id = int(self.kwargs['pk'])

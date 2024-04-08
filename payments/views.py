@@ -4,9 +4,8 @@ from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponseRedirect
 from rest_framework.response import Response
 from account.models import StripeModel, OrderModel
-from decimal import Decimal
 from django.shortcuts import redirect
-
+from django.urls import reverse
 from datetime import datetime
 from django.views.generic import TemplateView
 import math
@@ -207,8 +206,6 @@ class CreateCheckoutSession(APIView):
             price = math.ceil(price * 100)
             shipping_price = math.ceil(shipping_price * 100)
 
-            YOUR_DOMAIN = 'https://hendrixapi.world'  # Change this to your domain
-
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[
@@ -240,8 +237,8 @@ class CreateCheckoutSession(APIView):
                     "shipping_price": shipping_price,
                 },
                 mode='payment',
-                success_url=YOUR_DOMAIN + f'payments/success/{user_id}',
-                cancel_url=YOUR_DOMAIN + f'payments/cancel/{user_id}',
+                success_url=request.build_absolute_uri(reverse('success-page-url')),
+                cancel_url=request.build_absolute_uri(reverse('cancel-page-url')),
             )
             
             main_url = checkout_session.url
@@ -249,56 +246,3 @@ class CreateCheckoutSession(APIView):
             
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
-class CancelPage(TemplateView):
-    def get(self, request, *args, **kwargs):
-        user_id = int(self.kwargs['pk'])
-        print("user_id:", user_id)
-        print('cancel_page')
-        YOUR_DOMAIN1 = 'https://www.hendrix.world/cancel'
-        return HttpResponseRedirect(YOUR_DOMAIN1)
-
-
-class SuccessPage(TemplateView):
-    template_name = "success.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        session_id = self.request.GET.get("session_id")
-        session = stripe.checkout.Session.retrieve(session_id)
-        context["payment_intent_id"] = session.payment_intent
-        return context
-
-    def generate_invoice(self, payment_intent_id, amount):
-        stripe_fee = min(Decimal(amount) * Decimal(0.004), Decimal(200))
-        invoice_amount = Decimal(amount) + stripe_fee
-
-        # Create the invoice
-        invoice = stripe.InvoiceItem.create(
-            customer=payment_intent_id.customer,
-            price=invoice_amount,
-            currency="usd",
-            description="Stripe transaction fee",
-        )
-
-        # Send the invoice
-        invoice = stripe.Invoice.create(
-            customer=payment_intent_id.customer,
-            auto_advance=True
-        )
-
-        return invoice
-
-    def payment_success(self, request):
-        session_id = request.GET.get("session_id")
-        session = stripe.checkout.Session.retrieve(session_id)
-
-        # Example usage after successful payment
-        payment_intent_id = session.payment_intent
-        amount = 100  # Replace with the actual amount
-
-        # Generate invoice
-        invoice = self.generate_invoice(payment_intent_id, amount)
-        print("Invoice created:", invoice)
-
-        return redirect("success-page-url")  

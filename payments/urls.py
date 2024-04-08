@@ -9,6 +9,4 @@ urlpatterns = [
     path('delete-card/', views.DeleteCardView.as_view()),    
     path('card-details/', views.RetrieveCardView.as_view()),
     path('create-checkout-session/', views.CreateCheckoutSession.as_view(), name='create-checkout-session'),
-    path('cancel/<int:pk>/', views.CancelPage.as_view(), name='CancelPage'),
-    path('success/<int:pk>/', views.SuccessPage.as_view(), name='SuccessPage'),
 ]

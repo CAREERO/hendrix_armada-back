@@ -1,4 +1,3 @@
-from requests import session
 import stripe
 from rest_framework import status, permissions
 from rest_framework.views import APIView
@@ -29,7 +28,7 @@ def stripe_webhook(request):
     except stripe.error.SignatureVerificationError as e:
         return JsonResponse({'error': str(e)}, status=400)
 
-    if event['type'] == 'checkout.session.async_payment_succeeded':
+    if event['type'] == 'checkout.session.completed':
         # Handle successful payment invoice event
         invoice = event['data']['object']
         customer_id = invoice['customer']
@@ -37,8 +36,8 @@ def stripe_webhook(request):
         # Automatically create an invoice in your system
         try:
             # Retrieve necessary information from the invoice object
-            amount_due = session['amount_total'] / 100
-            description = "Checkout Session Payment"
+            amount_due = invoice['amount_due']
+            description = invoice['description']
 
             # Create an invoice in your system
             created_invoice = YourInvoiceModel.objects.create(
@@ -54,7 +53,7 @@ def stripe_webhook(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-    elif event['type'] == 'checkout.session.async_payment_failed':
+    elif event['type'] == 'invoice.payment_failed':
         # Handle failed payment invoice event
         invoice = event['data']['object']
         customer_id = invoice['customer']
@@ -211,7 +210,7 @@ class CreateCheckoutSession(APIView):
             price = math.ceil(price * 100)
             shipping_price = math.ceil(shipping_price * 100)
 
-            YOUR_DOMAIN = 'https://hendrixapi.world'
+            YOUR_DOMAIN = 'http://localhost:3000'
 
             checkout_session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
@@ -266,28 +265,49 @@ class SuccessPage(TemplateView):
         return JsonResponse({'message': 'Payment Successful'})
     
 # Create an invoice for a customer
+from django.http import JsonResponse
+import stripe
+
 def create_invoice(request):
     try:
+        # Retrieve user ID from the authenticated user
+        user_id = request.user.id
+        
+        # Retrieve other data from the request
         customer_id = request.POST.get('customer_id')
         amount = int(request.POST.get('amount'))  # Amount in cents
         description = request.POST.get('description')
+        
+        # Create invoice using Stripe API
         invoice = stripe.Invoice.create(
             customer=customer_id,
             amount=amount,
             description=description,
             currency="usd"
         )
+        
+        # Return JSON response with the created invoice ID
         return JsonResponse({'invoice_id': invoice.id})
     except Exception as e:
+        # Return JSON response with error message if an exception occurs
         return JsonResponse({'error': str(e)}, status=500)
+
 
 # Retrieve an invoice
 def retrieve_invoices(request):
     try:
-        invoices = YourInvoiceModel.objects.all().values(
-            'id', 'customer_id', 'amount_due', 'description'
-        )
-        invoices_list = list(invoices)
-        return JsonResponse({'invoices': invoices_list}, safe=False)
+        # Example: Retrieve invoices associated with the authenticated user
+        user_id = request.user.id
+        invoices = YourInvoiceModel.objects.filter(customer_id=user_id)
+        
+        # Serialize invoices data as needed
+        invoices_data = [{
+            'id': invoice.id,
+            'amount_due': invoice.amount_due,
+            'description': invoice.description,
+            # Add other fields as needed
+        } for invoice in invoices]
+
+        return JsonResponse({'invoices': invoices_data}, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

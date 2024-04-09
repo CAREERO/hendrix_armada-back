@@ -54,3 +54,13 @@ class OrderModel(models.Model):
     is_delivered = models.BooleanField(default=False)
     delivered_at = models.CharField(max_length=200, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) 
+    
+    
+class YourInvoiceModel(models.Model):
+    customer_id = models.CharField(max_length=100)
+    amount_due = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField()
+    # Add any other fields you need for your invoice
+
+    def __str__(self):
+        return f"Invoice for Customer {self.customer_id}"
